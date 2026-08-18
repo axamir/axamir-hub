@@ -1,0 +1,16 @@
+name = "ask-the-network"
+main = "worker/worker.js"
+compatibility_date = "2026-08-18"
+account_id = "9bb70cf62617fccb0d3ba058961f2908"
+workers_dev = true
+
+[ai]
+binding = "AI"
+
+[[ratelimits]]
+name = "GUIDE_RATE_LIMIT"
+namespace_id = "917381"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
