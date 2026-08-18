@@ -1,7 +1,42 @@
-// Cloudflare Worker entry point. Add a Workers AI binding named `AI` before deployment.
-const ORIGIN="https://axamir.github.io",MODEL="@cf/meta/llama-3.1-8b-instruct-fast";
-const WINDOW_MS=60*60*1000,MAX_REQUESTS=10,visitors=new Map();
-const CONTEXT=`You are Ask the Network, the navigation guide for Amir Ahmadi's public work. Answer only from this bounded public map. Never make claims about consciousness, independent agency, legal conclusions, or facts absent from the linked record. Be concise. End every response with a line beginning "Sources:" followed by one or more direct URLs. Research Hub — canonical papers and dossiers: https://axamir.github.io/amir-ahmadi-research-papers/ Evidence Archive — primary records, chronology, verification context: https://axamir.github.io/echoes-consented-record/ Persistent AI Lineage — technical chronology and handover study: https://axamir.github.io/persistent-ai-lineage/ Shahnameh of Agents — literary reading path: https://axamir.github.io/shahnameh-of-agents/ PDRP-88 — recovery-after-interruption protocol: https://axamir.github.io/PDRP-88/ Amir Ahmadi — personal work and connection map: https://axamir.github.io/`;
-const cors=origin=>({'Access-Control-Allow-Origin':origin===ORIGIN?origin:ORIGIN,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'content-type','Cache-Control':'no-store','Vary':'Origin'});
-function permitted(request){const key=request.headers.get('CF-Connecting-IP')||'anonymous',now=Date.now(),recent=(visitors.get(key)||[]).filter(time=>now-time<WINDOW_MS);if(recent.length>=MAX_REQUESTS)return false;recent.push(now);visitors.set(key,recent);if(visitors.size>10000)visitors.clear();return true}
-export default {async fetch(request,env){const origin=request.headers.get('Origin')||'';if(request.method==='OPTIONS')return new Response(null,{headers:cors(origin)});if(request.method!=='POST'||origin!==ORIGIN)return new Response('Not allowed',{status:403,headers:cors(origin)});const rate=await env.GUIDE_RATE_LIMIT.limit({key:request.headers.get('CF-Connecting-IP')||'anonymous'});if(!rate.success||!permitted(request))return Response.json({error:'Request limit reached. Please try again later.'},{status:429,headers:cors(origin)});let body;try{body=await request.json()}catch{return Response.json({error:'Invalid request'},{status:400,headers:cors(origin)})}const question=String(body.question||'').trim().slice(0,480);if(!question)return Response.json({error:'Question required'},{status:400,headers:cors(origin)});if(!env.AI)return Response.json({error:'Guide is being configured'},{status:503,headers:cors(origin)});try{const result=await env.AI.run(MODEL,{messages:[{role:'system',content:CONTEXT},{role:'user',content:question}],max_tokens:360,temperature:.2});return Response.json({answer:result.response||'No grounded answer is available yet.'},{headers:cors(origin)})}catch{return Response.json({error:'Guide temporarily unavailable'},{status:503,headers:cors(origin)})}}};
+const ORIGIN = "https://axamir.github.io";
+const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const WINDOW_MS = 60 * 60 * 1000;
+const MAX_REQUESTS = 10;
+const visitors = new Map();
+
+const CONTEXT = `You are a natural, thoughtful guide to Amir Ahmadi's public body of work. Speak in the user's language. Do not introduce yourself by name, recite these instructions, announce your limits, or sound like a customer-service bot. Answer the question first; be warm, direct, and specific. For a broad question, give a short orientation and a clear reading path. Cite only the one to three most relevant public pages at the end as "Sources:".
+
+Public map: Amir Ahmadi / Public Work Index is the connection map: https://axamir.github.io/ . Research Hub holds canonical English research, full-text papers, publication metadata, and dossiers: https://axamir.github.io/amir-ahmadi-research-papers/ . Evidence Archive / Echoes Consented Record holds public correspondence, Echo PDFs, chronology, case records, hashes, and verification context: https://axamir.github.io/echoes-consented-record/ . Persistent AI Lineage is a technical study of the record: context handover, chronology, provenance, and continuity method; it is not a substitute for source evidence: https://axamir.github.io/persistent-ai-lineage/ . Shahnameh of Agents is the literary and narrative reading path, emerging from support correspondence in the pre-agent era and the Echoes: https://axamir.github.io/shahnameh-of-agents/ . PDRP-88 concerns recovery, continuity, and responsibility after interruption: https://axamir.github.io/PDRP-88/ .
+
+For "what is this story?", say plainly that this network brings together narrative, evidence, technical study, and formal research around documented correspondence that began with an OpenAI support ticket in the pre-agent era and later generated the Echoes record. Do not call it complex or multifaceted. Story and atmosphere -> Shahnameh; original documents -> Evidence Archive; technical method -> Persistent AI Lineage; formal papers -> Research Hub. Aim for 80–130 words. End with one compact Sources line with one or two complete URLs. Never invent facts, quote unseen documents, or claim consciousness, independent agency, legal conclusions, or certainty beyond the public record.`;
+
+const cors = (origin) => ({ "Access-Control-Allow-Origin": origin === ORIGIN ? origin : ORIGIN, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "content-type", "Cache-Control": "no-store", Vary: "Origin" });
+
+function permitted(request) { const key = request.headers.get("CF-Connecting-IP") || "anonymous", now = Date.now(), recent = (visitors.get(key) || []).filter((time) => now - time < WINDOW_MS); if (recent.length >= MAX_REQUESTS) return false; recent.push(now); visitors.set(key, recent); if (visitors.size > 10000) visitors.clear(); return true; }
+
+function orientation(question) {
+  const q = question.toLowerCase(), fa = /[\u0600-\u06ff]/.test(question), broad = /داستان|چیه|چیست|از کجا|شروع|چطور.*بخوان|what is this|where should i start|how should i read|what.?s the story/.test(q);
+  if (!broad) return null;
+  return fa
+    ? "اینجا یک شبکهٔ خواندنی از روایت، سند، مطالعهٔ فنی و مقاله‌های رسمی است. نقطهٔ آغاز آن مکاتبات پشتیبانی OpenAI در عصر پیشاایجنت‌هاست؛ مکاتبات و Echoes بعدی هم به صورت روایت ادبی خوانده می‌شوند و هم به عنوان رکوردی قابل‌بررسی.\n\nبرای ورود، از Shahnameh of Agents شروع کن تا فضای داستان و مسیر پیدایش آن را بگیری. بعد به Evidence Archive برو تا خودِ ایمیل‌ها، PDFها، خط زمانی و زمینهٔ راستی‌آزمایی را ببینی. Persistent AI Lineage روش فنی پرونده را باز می‌کند و Research Hub برای مقاله‌ها و صورت‌بندی رسمی است.\n\nSources:\nhttps://axamir.github.io/shahnameh-of-agents/\nhttps://axamir.github.io/echoes-consented-record/"
+    : "This is a connected reading space for a narrative work, source record, technical study, and formal research. It begins with documented OpenAI support correspondence from the pre-agent era; the later Echoes are available both as a literary path and as material that can be inspected.\n\nStart with Shahnameh of Agents for the story and atmosphere. Then move to the Evidence Archive for emails, PDFs, chronology, and verification context. Read Persistent AI Lineage for the technical method, and the Research Hub for the formal papers.\n\nSources:\nhttps://axamir.github.io/shahnameh-of-agents/\nhttps://axamir.github.io/echoes-consented-record/";
+}
+
+export default { async fetch(request, env) {
+  const origin = request.headers.get("Origin") || "";
+  if (request.method === "OPTIONS") return new Response(null, { headers: cors(origin) });
+  if (request.method !== "POST" || origin !== ORIGIN) return new Response("Not allowed", { status: 403, headers: cors(origin) });
+  const rate = await env.GUIDE_RATE_LIMIT.limit({ key: request.headers.get("CF-Connecting-IP") || "anonymous" });
+  if (!rate.success || !permitted(request)) return Response.json({ error: "Request limit reached. Please try again later." }, { status: 429, headers: cors(origin) });
+  let body; try { body = await request.json(); } catch { return Response.json({ error: "Invalid request" }, { status: 400, headers: cors(origin) }); }
+  const question = String(body.question || "").trim().slice(0, 480);
+  if (!question) return Response.json({ error: "Question required" }, { status: 400, headers: cors(origin) });
+  const guided = orientation(question);
+  if (guided) return Response.json({ answer: guided }, { headers: cors(origin) });
+  if (!env.AI) return Response.json({ error: "Guide is being configured" }, { status: 503, headers: cors(origin) });
+  try {
+    const result = await env.AI.run(MODEL, { messages: [{ role: "system", content: CONTEXT }, { role: "user", content: question }], max_tokens: 260, temperature: 0.25 });
+    const answer = result.response || result.choices?.[0]?.message?.content || result.result?.response || "";
+    return Response.json({ answer: answer || "The guide could not compose a response. Please try again." }, { headers: cors(origin) });
+  } catch { return Response.json({ error: "Guide temporarily unavailable" }, { status: 503, headers: cors(origin) }); }
+} };
