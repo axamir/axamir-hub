@@ -6,13 +6,14 @@
   <title>Work with Amir Ahmadi</title>
   <meta name="description" content="Start a conversation about verifiable human–AI systems.">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="a11y.css">
   <style>
-    .contact-page{max-width:920px;margin:0 auto;padding:12vh 0}.contact-page>a{color:var(--a);font:11px ui-monospace,monospace;letter-spacing:.12em}.contact-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:7vw;margin-top:8vh}.contact-page h1{margin:12px 0 26px;font:500 clamp(48px,7vw,92px)/.88 Georgia,serif;letter-spacing:-.06em}.contact-page p,.contact-page li{color:#c0ceca;line-height:1.65}.contact-page ul{padding-left:18px}.contact-page form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:25px;border:1px solid var(--line);background:#0e1919cc}.contact-page label{display:grid;gap:8px;color:var(--muted);font:11px ui-monospace,monospace;letter-spacing:.08em}.contact-page input,.contact-page textarea,.contact-page select{width:100%;border:1px solid #dbe5df40;background:#07100f;color:var(--paper);padding:12px;font:15px Arial,sans-serif}.contact-page .wide,.contact-page button,.contact-page form>p{grid-column:1/-1}.contact-page button{justify-self:start;color:var(--ink);background:var(--a);border:0;border-radius:0;font-weight:bold}.contact-page form>p{margin:0;font-size:13px}.honey{position:absolute;left:-9999px}.notice{grid-column:1/-1;padding:13px;border:1px solid #8ce1ce55;color:var(--a)}@media(max-width:760px){.contact-page{padding:9vh 0}.contact-grid,.contact-page form{grid-template-columns:1fr}.contact-page h1{font-size:52px}}
+    .contact-page{max-width:920px;margin:0 auto;padding:12vh 0}.contact-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}.contact-nav a{color:var(--a);font:11px ui-monospace,monospace;letter-spacing:.12em}.contact-nav button{font:11px ui-monospace,monospace;letter-spacing:.1em}.contact-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:7vw;margin-top:8vh}.contact-page h1{margin:12px 0 26px;font:500 clamp(48px,7vw,92px)/.88 Georgia,serif;letter-spacing:-.06em}.contact-page p,.contact-page li{color:#c0ceca;line-height:1.65}.contact-page ul{padding-left:18px}.contact-page form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:25px;border:1px solid var(--line);background:#0e1919cc}.contact-page label{display:grid;gap:8px;color:var(--muted);font:11px ui-monospace,monospace;letter-spacing:.08em}.contact-page input,.contact-page textarea,.contact-page select{width:100%;border:1px solid #dbe5df40;background:#07100f;color:var(--paper);padding:12px;font:15px Arial,sans-serif}.contact-page .wide,.contact-page button,.contact-page form>p{grid-column:1/-1}.contact-page button{justify-self:start;color:var(--ink);background:var(--a);border:0;border-radius:0;font-weight:bold}.contact-page form>p{margin:0;font-size:13px}.honey{position:absolute;left:-9999px}.notice{grid-column:1/-1;padding:13px;border:1px solid #8ce1ce55;color:var(--a)}@media(max-width:760px){.contact-page{padding:9vh 0}.contact-grid,.contact-page form{grid-template-columns:1fr}.contact-page h1{font-size:52px}}
   </style>
 </head>
 <body>
   <main class="contact-page">
-    <a href="./" data-en="← RETURN TO THE PUBLIC INDEX" data-fa="بازگشت به نقشهٔ آثار ←">← RETURN TO THE PUBLIC INDEX</a>
+    <header class="contact-nav"><a href="./" data-en="← RETURN TO THE PUBLIC INDEX" data-fa="بازگشت به نقشهٔ آثار ←">← RETURN TO THE PUBLIC INDEX</a><button id="lang" aria-label="Switch language">فا</button></header>
     <div class="contact-grid">
       <section>
         <p class="kicker" data-en="WORK WITH ME" data-fa="همکاری">WORK WITH ME</p>
@@ -35,12 +36,13 @@
         <label><span data-en="DESIRED TIMELINE" data-fa="زمان‌بندی مدنظر">DESIRED TIMELINE</span><input name="timeline"></label>
         <label><span data-en="APPROXIMATE BUDGET (OPTIONAL)" data-fa="بودجهٔ تقریبی (اختیاری)">APPROXIMATE BUDGET (OPTIONAL)</span><input name="budget"></label>
         <button type="submit"><b data-en="START A CONVERSATION" data-fa="شروع گفتگو">START A CONVERSATION</b> ↗</button>
-        <p data-en="I review each inquiry personally and reply within a few working days." data-fa="هر درخواست را شخصاً بررسی می‌کنم و طی چند روز کاری پاسخ می‌دهم.">I review each inquiry personally and reply within a few working days.</p>
+        <p data-en="I review each inquiry personally and reply within a few working days. Your information is used only to respond to this request and is not published." data-fa="هر درخواست را شخصاً بررسی می‌کنم و طی چند روز کاری پاسخ می‌دهم. اطلاعات شما فقط برای پاسخ به این درخواست استفاده می‌شود و منتشر نخواهد شد.">I review each inquiry personally and reply within a few working days. Your information is used only to respond to this request and is not published.</p>
       </form>
     </div>
   </main>
   <script>
-    const lang=document.documentElement;
+    const lang=document.documentElement,button=document.querySelector('#lang');
+    button.onclick=()=>{const fa=lang.lang!=='fa';lang.lang=fa?'fa':'en';lang.dir=fa?'rtl':'ltr';document.querySelectorAll('[data-en]').forEach(el=>el.innerHTML=el.dataset[fa?'fa':'en']);button.textContent=fa?'EN':'فا'};
     if(new URLSearchParams(location.search).get('inquiry')==='sent')document.querySelector('#notice').hidden=false;
   </script>
 </body>
